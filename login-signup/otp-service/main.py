@@ -57,7 +57,7 @@ class EmailRequest(BaseModel):
     email: str  # Ensure email is expected in JSON format
 
 class OTPVerificationRequest(BaseModel):
-    email: str
+    secret: str
     otp: str
 
 # In-memory storage for demo purposes (replace with DB in production)
@@ -105,13 +105,10 @@ def generate_opt(request: EmailRequest):
 @app.post("/verify-otp")
 def verify_otp(request: OTPVerificationRequest):
     """Verifies the provided OTP against the stored secret."""
-    email = request.email
+    secret = request.secret
     otp = request.otp
 
-    if email not in users_secrets:
-        raise HTTPException(status_code=400, detail="User not found")
-
-    totp = pyotp.TOTP(users_secrets[email])
+    totp = pyotp.TOTP(secret)
     
     if totp.verify(otp):
         return {"message": "✅ OTP is valid! User authenticated."}

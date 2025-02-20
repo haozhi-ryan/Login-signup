@@ -60,7 +60,7 @@ async function connectToMongoDB() {
             // The req object contains information about the HTTP request sent by the client (frontend, Postman, browser, etc.).
             // The res object sends back a response to the client.
             try {
-                const { name, email, password } = req.body;
+                const { name, email, password, secret } = req.body;
                 // Validate input
                 if (!name || !email || !password) {
                     return res.status(400).json({ error: "Please fill in all fields" });
@@ -77,7 +77,7 @@ async function connectToMongoDB() {
                 const hashedPassword = await bcrypt.hash(password, saltRounds);
 
                 // Insert user into MongoDB
-                const result = await usersCollection.insertOne({ name, email, password: hashedPassword });
+                const result = await usersCollection.insertOne({ name, email, password: hashedPassword, secret });
                 console.log("Inserted User:", result);
                 
                 // Respond with success message
@@ -100,7 +100,8 @@ async function connectToMongoDB() {
         
                 // Find user in the "users" collection
                 const user = await usersCollection.findOne({ email });
-        
+                
+                // Checks if the email exists
                 if (!user) {
                     return res.status(400).json({ message: "Invalid email or password" });
                 }
@@ -112,7 +113,7 @@ async function connectToMongoDB() {
                 }
         
                 // Login successful
-                res.json({ message: "Login successful!", user: { name: user.name, email: user.email } });
+                res.json({ message: "Login successful!", user: { name: user.name, email: user.email, secret: user.secret } });
         
             } catch (error) {
                 console.error("Error logging in:", error);

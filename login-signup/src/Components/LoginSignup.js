@@ -3,18 +3,19 @@ import './LoginSignup.css';
 import userIcon from '../Components/assets/person.png';
 import emailIcon from '../Components/assets/email.png';
 import passwordIcon from '../Components/assets/password.png';
-import axios from "axios"
 
 const LoginSignup = () => {
     const [action, setAction] = useState("Sign Up");
     const [signUpError, setSignUpError] = useState(false);
     const [loginError, setLoginError] = useState(false);
 
+    // Verify OTP button and input field
+    const [otp, setOtp] = useState(""); // Stores the user's entered OTP
+    const [secret, setSecret] = useState(null); // Stores the secret from backend
+    const [message, setMessage] = useState("");
+
     // The state of the QR code
     const [qrCode, setQrCode] = useState(null);
-
-    const [otp, setOtp] = useState("");
-    const [message, setMessage] = useState("");
 
     const nameRef = useRef(null);
     const emailRef = useRef(null);
@@ -28,12 +29,24 @@ const LoginSignup = () => {
             const password = passwordRef.current?.value || "";
             
             try {
+                // Generates a OTP Secret if email is not empty
+                if (!email) {
+                    throw new Error("Email is empty");
+                }
+                // Generates the secret
+                const data = await generateOTP(email);
+                const secret = data.secret;
+            
                 // Send a POST request to the backend at PORT 5000
+                // Stores the user information into the database
                 const response = await fetch("http://localhost:5000/users", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, email, password }),
+                    body: JSON.stringify({ name, email, password, secret }),
                 });
+
+                // Generates the QR code when sign up is successfull
+                setQrCode(data.qr_code);
                 
                 // Parse response from the server
                 const result = await response.json();
@@ -81,10 +94,10 @@ const LoginSignup = () => {
                     setLoginError(true)
                     throw new Error(result.message || "Login failed");
                 } 
-                
-                // Generates the QR code
-                await generateOTP(email)
-                
+
+                // Store secret and show OTP input field
+                setSecret(result.user.secret);
+                    
                 alert(`Welcome back, ${result.user.name}!`);
                 setLoginError(false)
                 
@@ -95,7 +108,7 @@ const LoginSignup = () => {
         }
     };   
 
-    // Generates a QR code
+    // Generates a QR code and returns the secret
     const generateOTP = async (email) => {
         try {
             const response = await fetch("http://localhost:8000/generate-otp", {
@@ -107,7 +120,7 @@ const LoginSignup = () => {
             const data = await response.json()
             console.log("API Response:", data);
 
-            setQrCode(data.qr_code);
+            return data
 
         } catch (error) {
             console.error("Error generating OTP:", error);
@@ -115,16 +128,14 @@ const LoginSignup = () => {
     }
 
     // Handles the verification of the QR code
-    const verifyOTP = async () => {
-        
-        // Assumes there's a valid
-        const email = emailRef.current?.value
+    // Assumes the email and password are alreaydy verified
+    const verifyOTP = async (secret, otp) => {
 
         try {
             const response = await fetch("http://localhost:8000/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, otp }),
+                body: JSON.stringify({ secret, otp }),
             });
 
             const data = await response.json();
@@ -140,6 +151,8 @@ const LoginSignup = () => {
             setMessage("❌ An error occurred. Please try again.");
         }
     };
+
+ 
 
     return (
         <div className='container'>
@@ -170,6 +183,13 @@ const LoginSignup = () => {
                 <div>
                     <div className='login' onClick={() => {
                         setAction("Login");
+
+                        // Removes the picture of QR code if it's there
+                        setQrCode(null)
+
+                        // Removes the verify OTP if it's there
+                        setSecret(null)
+
                         setSignUpError(false);
                     }}>
                         Already have an account?
@@ -190,6 +210,10 @@ const LoginSignup = () => {
 
                         // Removes the picture of QR code if it's there
                         setQrCode(null)
+
+                        // Removes the verify OTP if it's there
+                        setSecret(null)
+
                         setLoginError(false);
                     }}>
                         Sign Up
@@ -211,6 +235,12 @@ const LoginSignup = () => {
                 <div>
                     <h3>Scan this QR Code:</h3>
                     <img src={qrCode} alt="OTP QR Code" />
+                </div>
+            )}
+
+            {/* Adds an input field to verify the otp */}
+            {secret && (
+                <div>
                     <h3>Enter OTP</h3>
                     <input 
                         type="text" 
@@ -218,7 +248,7 @@ const LoginSignup = () => {
                         value={otp} 
                         onChange={(e) => setOtp(e.target.value)} 
                     />
-                    <button onClick={verifyOTP}>Verify OTP</button>
+                     <button onClick={() => verifyOTP(secret, otp)}>Submit OTP</button>
                     {message && <p>{message}</p>}
                 </div>
             )}
