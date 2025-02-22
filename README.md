@@ -31,7 +31,7 @@ This project implements a two-factor authentication (2FA) system using React, Mo
 - MongoDB Atlas (ensure your IP is whitelisted)
 
 ## Configuration
-- Update the MongoDB connection string in the project to match your database settings.
+- Update the MongoDB connection string in the project's config.env file to match your database settings.
 
 ## Notes
 - Ensure your MongoDB Atlas is configured to accept connections from your IP.
