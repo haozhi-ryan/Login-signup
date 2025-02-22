@@ -103,3 +103,37 @@
     margin-top: 20px;
     font-size: 15px;
 }
+
+.verify-container {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+
+}
+
+.verify-container h1 {
+    max-width: 400px;
+    font-size: 15px;
+    color: grey;
+}
+
+.verify-button {
+    color: grey;
+    background: #eaeaea;
+    font-weight: 700;
+    border: solid;
+    border-radius: 50px;
+    border-color: #eaeaea;
+}
+
+.verify-button:hover {
+    background: #5a4ae3;
+    border-color: #5a4ae3;
+    color: #fff;
+}
+
+.verify-input {
+    border-radius: 6px;
+    border: solid;
+}
+

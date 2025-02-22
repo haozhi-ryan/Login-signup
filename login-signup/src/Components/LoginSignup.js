@@ -3,16 +3,25 @@ import './LoginSignup.css';
 import userIcon from '../Components/assets/person.png';
 import emailIcon from '../Components/assets/email.png';
 import passwordIcon from '../Components/assets/password.png';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+
 
 const LoginSignup = () => {
+    const navigate = useNavigate();
+    const { login } = useAuth(); // Access login function from context
+
     const [action, setAction] = useState("Sign Up");
     const [signUpError, setSignUpError] = useState(false);
     const [loginError, setLoginError] = useState(false);
 
+    // Success/error message for OTP verification
+    const [verifyError, setVerifyError] = useState(false)
+
     // Verify OTP button and input field
     const [otp, setOtp] = useState(""); // Stores the user's entered OTP
     const [secret, setSecret] = useState(null); // Stores the secret from backend
-    const [message, setMessage] = useState("");
 
     // The state of the QR code
     const [qrCode, setQrCode] = useState(null);
@@ -22,6 +31,8 @@ const LoginSignup = () => {
     const passwordRef = useRef(null);
 
     const handleSubmit = async () => {
+        setVerifyError(null)
+
         if (action === "Sign Up") {
             // HANDLES SIGN UP
             const name = nameRef.current?.value || "";
@@ -128,9 +139,8 @@ const LoginSignup = () => {
     }
 
     // Handles the verification of the QR code
-    // Assumes the email and password are alreaydy verified
+    // Assumes the email and password are already verified
     const verifyOTP = async (secret, otp) => {
-
         try {
             const response = await fetch("http://localhost:8000/verify-otp", {
                 method: "POST",
@@ -142,13 +152,23 @@ const LoginSignup = () => {
             console.log("OTP Verification Response:", data);
 
             if (response.ok) {
-                setMessage("✅ OTP Verified! User authenticated.");
+                setVerifyError(false)
+                console.log("Verification Success!")
+                
+                // Retrieves the user email
+                const email = emailRef.current?.value || "";
+
+                login({ email }); // Call login() to store user data in context
+
+                // Navigates the user to the private page
+                setTimeout(() => navigate("/dashboard"), 1500);
             } else {
-                setMessage("❌ Invalid OTP. Please try again.");
+                console.log("Invalid code. Please try again.")
+                setVerifyError(true)
             }
         } catch (error) {
             console.error("Error verifying OTP:", error);
-            setMessage("❌ An error occurred. Please try again.");
+            setVerifyError(true)
         }
     };
 
@@ -237,21 +257,25 @@ const LoginSignup = () => {
                     <img src={qrCode} alt="OTP QR Code" />
                 </div>
             )}
+            <div className='verify-container'>
+                {/* Adds an input field to verify the otp */}
+                {secret && (
+                    <div>
+                        <h1>We sent 6 digit verification code to your Google Authenticator</h1>
+                        <input 
+                            type="text" 
+                            placeholder="Enter Code" 
+                            value={otp} 
+                            onChange={(e) => setOtp(e.target.value)} 
+                            className='verify-input'
+                        />
+                        <button className='verify-button' onClick={() => verifyOTP(secret, otp)}>Verify</button>
+                        {verifyError === true && <p style={{ color: "red", fontSize: "15px" }}>Invalid code. Please try again.</p>}
+                        {verifyError === false && <p style={{ color: "green", fontSize: "15px" }}>Code verified successfully!</p>}
+                    </div>
+                )}
+            </div>
 
-            {/* Adds an input field to verify the otp */}
-            {secret && (
-                <div>
-                    <h3>Enter OTP</h3>
-                    <input 
-                        type="text" 
-                        placeholder="Enter OTP" 
-                        value={otp} 
-                        onChange={(e) => setOtp(e.target.value)} 
-                    />
-                     <button onClick={() => verifyOTP(secret, otp)}>Submit OTP</button>
-                    {message && <p>{message}</p>}
-                </div>
-            )}
         </div>
     );
 }

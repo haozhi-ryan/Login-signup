@@ -12,38 +12,6 @@ from pydantic import BaseModel
 # Initialize the FastAPI app
 app = FastAPI()
 
-# # Generate a secret key (temporary for testing)
-# # A password that both sides use to generate and verify OTPs
-# SECRET_KEY = pyotp.random_base32()  # Generates a 32-character base32 secret
-
-
-# # This sets up a Time-based One-Time Password (TOTP) generator using the secret.
-# # It creates new OTPs every 30 seconds.
-# totp = pyotp.TOTP(SECRET_KEY)
-
-# # This generates a QR code that contains the secret in a special format.
-# # Scanning this QR code with an authenticator app (like Google Authenticator or Authy) allows the app to generate OTPs.
-# otp_uri = totp.provisioning_uri(name="user@example.com", issuer_name="MyApp")
-# qrcode.make(otp_uri).show()
-
-# # Generate a current OTP
-# print("Current OTP:", totp.now())  # Generates a new OTP
-
-# # Verify user input
-# user_otp = input("Enter OTP: ")
-# if totp.verify(user_otp):
-#     print("OTP is valid!")
-# else:
-#     print("Invalid OTP.")
-
-# -------Steps to test it:-------
-# Run the script.
-# Scan the QR code using an app like Google Authenticator or Authy.
-# The app will start showing a changing 6-digit OTP.
-# Enter the OTP when prompted in the script.
-# If it matches, you’ll see "OTP is valid!".
-
-
 # Allow frontend (React running on localhost:3000) to communicate with FastAPI
 app.add_middleware(
     CORSMiddleware,
@@ -60,22 +28,13 @@ class OTPVerificationRequest(BaseModel):
     secret: str
     otp: str
 
-# In-memory storage for demo purposes (replace with DB in production)
-users_secrets = {}
-
-# dummy secret associated wiht an email
-users_secrets["tests@gmail.com"] = pyotp.random_base32()
-
 # @app.post("/route") tells FastAPI that the function below should run when a client sends a POST request to that route.
 @app.post("/generate-otp")
 def generate_opt(request: EmailRequest):
     """Generates a QR code and OTP secret for a given user email"""
-    if request.email in users_secrets:
-        secret = users_secrets[request.email]
-    else:
-        secret = pyotp.random_base32()
-        users_secrets[request.email] = secret
-    
+    # Generates a random secret
+    secret = pyotp.random_base32()
+
     # It creates new OTPs every 30 seconds.
     totp = pyotp.TOTP(secret)
 
